@@ -180,7 +180,8 @@ object Parser {
               field = new StringBuilder
               state = Delimiter
               pos += 1
-            case '\n' | '\u2028' | '\u2029' | '\u0085' =>
+            case '\n' | '\u2028' | '\u2029' | '\u0085' => // '\u0085' - Unicode new line, \u2028 and \u2029 are invisible
+                                                          // Unicode line and paragraph separator characters.
               fields :+= field.toString
               field = new StringBuilder
               state = End
