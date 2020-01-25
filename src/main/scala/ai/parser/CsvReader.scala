@@ -3,23 +3,22 @@ package ai.parser
 import java.io._
 
 import ai.parser.utils.{Format, MalformedLineException}
+
 import scala.io.Source
-import scala.annotation.tailrec
+import util.control.Breaks._
+
 
 class CsvReader(private val inputStream: InputStream, encoding: String)(implicit format: Format) extends Closeable {
 
-  private val parser = new Parser(format)
+  private val parser = new Parser()
 
-  /**
-    * It will treat any of \r\n, \r, or \n as a line separator (longest match) - if
-    * you need more refined behavior you can subclass Source#LineIterator directly.
-    */
   private val lineIterator: Iterator[String] = Source.fromInputStream(inputStream, encoding).getLines()
 
   def readNext(): Option[List[String]] = {
 
-    @tailrec
+    @scala.annotation.tailrec
     def parseNext(stream: InputStream, leftOver: Option[String] = None): Option[List[String]] = {
+
       val nextLine = if(lineIterator.hasNext) lineIterator.next() else null
       if (nextLine == null) {
         if (leftOver.isDefined) {
@@ -36,6 +35,7 @@ class CsvReader(private val inputStream: InputStream, encoding: String)(implicit
         }
       }
     }
+
     parseNext(inputStream)
   }
 
@@ -48,6 +48,35 @@ class CsvReader(private val inputStream: InputStream, encoding: String)(implicit
         line => headers.zip(line).toMap
       }
     }).getOrElse(Iterator()).toStream
+  }
+
+  private def readLineWithTerminator(bufferedReader: Reader): String = {
+    val sb = new StringBuilder
+    breakable {
+      do {
+        var c = bufferedReader.read
+        if (c == -1) {
+          if (sb.isEmpty) return null
+          else break
+        }
+        sb.append(c.toChar)
+        if (c == '\n' || c == '\u2028' || c == '\u2029' || c == '\u0085') break
+        if (c == '\r') {
+          bufferedReader.mark(1)
+          c = bufferedReader.read
+          if (c == -1) break
+          else if (c == '\n') {
+            sb.append('\n')
+          }
+          else {
+            bufferedReader.reset()
+          }
+          break
+        }
+      }
+      while (true)
+    }
+    sb.toString
   }
 
   override def close(): Unit = inputStream.close()
