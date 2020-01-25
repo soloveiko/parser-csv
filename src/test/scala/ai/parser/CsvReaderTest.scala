@@ -14,7 +14,7 @@ class CsvReaderTest extends AnyFunSpec with Matchers {
     it("multiline value") {
       val reader = CsvReader.read(new File(getClass.getResource("/multiline.csv").getPath))
       val maybeStrings = reader.readNext()
-      maybeStrings.get.size should be(3)
+      maybeStrings.get.size should be(7)
     }
 
     it("quoted field") {

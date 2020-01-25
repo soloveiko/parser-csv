@@ -7,7 +7,7 @@ class Parser()(implicit format: Format) extends Serializable {
   def parseLine(input: String): Option[List[String]] = {
     val parsedResult = Parser.parse(input)(format)
     if (parsedResult.contains(List(""))) Some(Nil)
-    else Some(parsedResult)
+    else parsedResult
   }
 
 }
@@ -18,11 +18,15 @@ object Parser {
     * @param position of current char in input
     * @return
     */
-  def parse(input: String, position: Int = 0, fields: Vector[String] = Vector())(implicit format: Format): List[String] = {
+  def parse(input: String, position: Int = 0, fields: Vector[String] = Vector(), leftOver: Boolean = false)(implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
+    if (leftOver) {
+      println("")
+    }
     val buflen = buf.length
     val field = new String
-    if(position >= input.length && !field.isEmpty) return fields.toList
+    if(position >= input.length && !field.isEmpty) return Some(fields.toList)
+    if(leftOver) return None
     if (buf.length > 0 && buf(0) == '\uFEFF') {
       return parse(input, position + 1)
     }
@@ -52,11 +56,11 @@ object Parser {
 
       }
     }
-    fields.toList
+    Some(fields.toList)
   }
 
   private def handleQuoteStart(input: String, position: Int, currField: String, fields: Vector[String])
-                              (implicit format: Format): List[String] = {
+                              (implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
     val buflen = buf.length
     while (position < buflen) {
@@ -87,10 +91,10 @@ object Parser {
   }
 
   private def handleQuotedField(input: String, currField: String, position: Int, fields: Vector[String])
-                               (implicit format: Format): List[String] = {
+                               (implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
-
     val buflen = buf.length
+    if (position == buflen) return parse(input, position, fields, leftOver = true)
     while (position < buflen) {
       val c = buf(position)
       c match {
@@ -116,11 +120,11 @@ object Parser {
       }
     }
     val strings = fields :+ currField
-    strings.toList
+    Some(strings.toList)
   }
 
   private def handleQuoteEnd(input: String, currField: String, position: Int, fields: Vector[String])
-                            (implicit format: Format): List[String] = {
+                            (implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
     val buflen = buf.length
     while (position < buflen) {
@@ -144,11 +148,11 @@ object Parser {
       }
     }
     val strings = fields :+ currField
-    strings.toList
+    Some(strings.toList)
   }
 
   private def handleDelimiterChar(input: String, position: Int, currField: String, fields: Vector[String])
-                                 (implicit format: Format): List[String] = {
+                                 (implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
     val buflen = buf.length
     while (position < buflen) {
@@ -178,11 +182,11 @@ object Parser {
       }
     }
     val strings = fields :+ ""
-    strings.toList
+    Some(strings.toList)
   }
 
   private def handleField(input: String, position: Int, currField: String, fields: Vector[String])
-                         (implicit format: Format): List[String] = {
+                         (implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
     val buflen = buf.length
 
@@ -218,6 +222,6 @@ object Parser {
       }
     }
     val strings = fields :+ currField
-    strings.toList
+    Some(strings.toList)
   }
 }
