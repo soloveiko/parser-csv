@@ -20,14 +20,11 @@ object Parser {
     */
   def parse(input: String, position: Int = 0, fields: Vector[String] = Vector(), leftOver: Boolean = false)(implicit format: Format): Option[List[String]] = {
     val buf: Array[Char] = input.toCharArray
-    if (leftOver) {
-      println("")
-    }
     val buflen = buf.length
     val field = new String
-    if(position >= input.length && !field.isEmpty) return Some(fields.toList)
-    if(leftOver) return None
-    if (buf.length > 0 && buf(0) == '\uFEFF') {
+    if (position >= input.length && !field.isEmpty) return Some(fields.toList)
+    if (leftOver) return None
+    if (buf.length > 0 && buf(0) == '\uFEFF') { // \uFEFF, used to get the difference between big- and little-endian UTF-16 encoding.
       return parse(input, position + 1)
     }
 
@@ -156,7 +153,7 @@ object Parser {
     val buf: Array[Char] = input.toCharArray
     val buflen = buf.length
     while (position < buflen) {
-    val c = buf(position)
+      val c = buf(position)
       c match {
         case format.`quoteChar` =>
           return handleQuoteStart(input, position + 1, currField, fields)
