@@ -5,4 +5,5 @@ trait Format extends Serializable {
   val quoteChar: Char = '"'
   val escapeChar: Char = '"'
   val lineTerminator: String = "\r\n"
+
 }
